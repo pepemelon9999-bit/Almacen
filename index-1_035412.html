@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Almacén</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root{
+    --paper:#EFEBE2; --paper-dim:#E3DDCC; --ink:#1C1C1C;
+    --green:#2F5233; --amber:#D9A441; --slate:#5B6B6F; --red:#A33B2E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;}
+  input:focus, button:focus, textarea:focus{outline:2px solid var(--amber); outline-offset:1px;}
+  .root{max-width:480px;margin:0 auto;padding-bottom:40px;}
+  .header{position:relative;background:var(--ink);color:var(--paper);overflow:hidden;}
+  .header-stripes{position:absolute;inset:0;opacity:.15;
+    background-image:repeating-linear-gradient(90deg,var(--paper) 0 3px,transparent 3px 6px,var(--paper) 6px 7px,transparent 7px 13px,var(--paper) 13px 15px,transparent 15px 20px);}
+  .header-row{position:relative;padding:18px 16px 14px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
+  .eyebrow-light{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;}
+  .title{font-family:'Oswald',sans-serif;font-weight:700;font-size:28px;letter-spacing:.03em;}
+  .tabs{display:flex;gap:6px;}
+  .tabbtn{display:flex;align-items:center;gap:6px;background:transparent;color:var(--paper);border:1px solid rgba(239,235,226,.35);border-radius:20px;padding:7px 12px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:500;cursor:pointer;}
+  .tabbtn.active{background:var(--amber);color:var(--ink);border-color:var(--amber);}
+  .content{padding:16px;}
+  .scanner-frame{position:relative;width:100%;aspect-ratio:4/3;background:var(--ink);border-radius:4px;overflow:hidden;}
+  video{width:100%;height:100%;object-fit:cover;}
+  .reticle{position:absolute;inset:0;pointer-events:none;}
+  .corner{position:absolute;width:22px;height:22px;border:3px solid var(--amber);}
+  .primary-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--paper);border:none;border-radius:4px;padding:12px 16px;font-family:'IBM Plex Sans';font-weight:600;font-size:14.5px;cursor:pointer;margin-top:14px;background:var(--green);}
+  .primary-btn.stop{background:var(--red);}
+  .secondary-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:4px;padding:11px 16px;font-family:'IBM Plex Sans';font-weight:600;font-size:14px;cursor:pointer;}
+  .danger-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--red);color:var(--paper);border:none;border-radius:4px;padding:11px 16px;font-family:'IBM Plex Sans';font-weight:600;font-size:14px;cursor:pointer;}
+  .warn-box{margin-top:12px;background:#F3E7CE;color:#7A5A18;padding:10px 12px;border-radius:4px;font-size:13px;}
+  .flash-banner{margin-top:12px;display:flex;align-items:center;gap:8px;background:var(--green);color:var(--paper);padding:10px 12px;border-radius:4px;font-size:13.5px;font-weight:500;}
+  .stripe-divider{height:10px;margin:18px 0;background-image:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px,var(--ink) 5px 6px,transparent 6px 10px,var(--ink) 10px 13px,transparent 13px 16px);opacity:.35;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);}
+  .row-input{display:flex;gap:8px;margin-top:8px;}
+  input[type=text], textarea{width:100%;font-family:'IBM Plex Mono',monospace;font-size:14.5px;padding:11px 12px;border:1.5px solid var(--paper-dim);border-radius:4px;background:#fff;color:var(--ink);}
+  textarea{font-family:'IBM Plex Sans';resize:vertical;}
+  .icon-btn{background:var(--ink);color:var(--paper);border:none;border-radius:4px;width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;}
+  .empty-state{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--slate);padding:50px 20px;font-size:14px;}
+  .tag-card{position:relative;width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:1.5px dashed var(--paper-dim);border-radius:6px;padding:14px 16px 14px 26px;margin-bottom:10px;cursor:pointer;text-align:left;}
+  .tag-hole{position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;background:var(--paper);border:1.5px dashed var(--paper-dim);}
+  .tag-name{font-family:'Oswald',sans-serif;font-weight:500;font-size:16.5px;}
+  .tag-category{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:.04em;}
+  .tag-meta{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--slate);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .count-badge{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;background:var(--amber);color:var(--ink);border-radius:12px;padding:2px 9px;}
+  .sheet-overlay{position:fixed;inset:0;background:rgba(28,28,28,.5);display:flex;align-items:flex-end;z-index:50;}
+  .sheet{position:relative;width:100%;max-height:85vh;overflow-y:auto;background:var(--paper);border-radius:16px 16px 0 0;padding:24px 20px 28px;}
+  .sheet-close{position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--slate);cursor:pointer;font-size:20px;}
+  .code-mono{font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.05em;margin-top:4px;margin-bottom:10px;}
+  .title2{font-family:'Oswald',sans-serif;font-weight:700;font-size:22px;}
+  .notes{font-size:13.5px;color:var(--slate);margin-top:8px;line-height:1.5;}
+  .history-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper-dim);}
+  .history-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+  .history-date{font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  label.field{display:block;margin-top:14px;margin-bottom:6px;font-size:12.5px;font-weight:600;color:var(--slate);}
+  .hidden{display:none !important;}
+  .btnrow{display:flex;gap:10px;margin-top:16px;}
+  .flex1{flex:1;}
+</style>
+</head>
+<body>
+<div class="root">
+  <div class="header">
+    <div class="header-stripes"></div>
+    <div class="header-row">
+      <div>
+        <div class="eyebrow-light">inventario doméstico</div>
+        <div class="title">ALMACÉN</div>
+      </div>
+      <div class="tabs">
+        <button class="tabbtn active" id="tabScan" onclick="setView('scan')">📷 Escanear</button>
+        <button class="tabbtn" id="tabList" onclick="setView('list')">📦 Productos (<span id="countBadge">0</span>)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewScan" class="content">
+    <div id="unsupportedBox" class="warn-box hidden">Este navegador no soporta el lector de códigos automático. Añade el código a mano abajo.</div>
+    <div id="scannerWrap">
+      <div class="scanner-frame">
+        <video id="video" muted playsinline></video>
+        <div class="reticle hidden" id="reticle">
+          <div class="corner" style="top:10px;left:10px;border-right:none;border-bottom:none;"></div>
+          <div class="corner" style="top:10px;right:10px;border-left:none;border-bottom:none;"></div>
+          <div class="corner" style="bottom:10px;left:10px;border-right:none;border-top:none;"></div>
+          <div class="corner" style="bottom:10px;right:10px;border-left:none;border-top:none;"></div>
+        </div>
+      </div>
+      <div id="cameraError" class="warn-box hidden"></div>
+      <button id="camBtn" class="primary-btn" onclick="toggleCamera()">📷 Activar cámara</button>
+    </div>
+    <div id="flashBanner" class="flash-banner hidden"></div>
+    <div class="stripe-divider"></div>
+    <div>
+      <div class="eyebrow">añadir código a mano</div>
+      <div class="row-input">
+        <input type="text" id="manualCode" placeholder="8410000123456" onkeydown="if(event.key==='Enter')submitManual()">
+        <button class="icon-btn" onclick="submitManual()">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewList" class="content hidden"></div>
+</div>
+
+<div id="sheetContainer"></div>
+
+<script>
+const FORMATS = ["ean_13","ean_8","upc_a","upc_e","code_128","code_39","qr_code"];
+const STORAGE_KEY = "almacen-data";
+let data = { productos:{}, historial:{} };
+let scanning = false, stream = null, detector = null, detectInterval = null;
+let lastScan = { code:null, time:0 };
+let pendingCode = null, editingCode = null, selectedCode = null;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) data = JSON.parse(raw);
+  }catch(e){ data = { productos:{}, historial:{} }; }
+}
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function setView(v){
+  document.getElementById('viewScan').classList.toggle('hidden', v!=='scan');
+  document.getElementById('viewList').classList.toggle('hidden', v!=='list');
+  document.getElementById('tabScan').classList.toggle('active', v==='scan');
+  document.getElementById('tabList').classList.toggle('active', v==='list');
+  if(v!=='scan') stopCamera();
+  if(v==='list') renderList();
+}
+
+function formatFecha(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function toggleCamera(){
+  if(scanning){ stopCamera(); return; }
+  const errBox = document.getElementById('cameraError');
+  errBox.classList.add('hidden');
+  if(!('BarcodeDetector' in window)){
+    document.getElementById('unsupportedBox').classList.remove('hidden');
+    document.getElementById('scannerWrap').classList.add('hidden');
+    return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false });
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    await video.play();
+    if(!detector) detector = new BarcodeDetector({ formats: FORMATS });
+    scanning = true;
+    document.getElementById('camBtn').textContent = '⏹ Detener cámara';
+    document.getElementById('camBtn').classList.add('stop');
+    document.getElementById('reticle').classList.remove('hidden');
+    detectInterval = setInterval(detectFrame, 400);
+  }catch(e){
+    errBox.textContent = 'No se pudo acceder a la cámara: ' + (e.message || e.name);
+    errBox.classList.remove('hidden');
+  }
+}
+
+function stopCamera(){
+  if(detectInterval) clearInterval(detectInterval);
+  detectInterval = null;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  scanning = false;
+  document.getElementById('camBtn').textContent = '📷 Activar cámara';
+  document.getElementById('camBtn').classList.remove('stop');
+  document.getElementById('reticle').classList.add('hidden');
+}
+
+async function detectFrame(){
+  const video = document.getElementById('video');
+  if(!detector || video.readyState < 2) return;
+  if(document.getElementById('sheetContainer').innerHTML.trim() !== '') return; // pausado: hay un formulario/ficha abierta
+  try{
+    const codes = await detector.detect(video);
+    if(codes && codes.length>0){
+      const value = codes[0].rawValue;
+      const now = Date.now();
+      if(lastScan.code===value && now-lastScan.time<4000) return;
+      lastScan = { code:value, time:now };
+      handleScan(value);
+    }
+  }catch(e){}
+}
+
+function handleScan(code){
+  if(data.productos[code]){
+    const hist = data.historial[code] ? [...data.historial[code]] : [];
+    hist.unshift(new Date().toISOString());
+    data.historial[code] = hist;
+    saveData();
+    showFlash(`Compra registrada: ${data.productos[code].nombre}`);
+    openDetail(code); // muestra la ficha del producto (nombre, categoría, notas, historial)
+  } else {
+    pendingCode = code;
+    openProductForm('Nuevo producto', code, {nombre:'',categoria:'',notas:''}, saveNewProduct);
+  }
+}
+
+function showFlash(msg){
+  const el = document.getElementById('flashBanner');
+  el.textContent = '✓ ' + msg;
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'), 3000);
+}
+
+function submitManual(){
+  const input = document.getElementById('manualCode');
+  const code = input.value.trim();
+  if(!code) return;
+  input.value = '';
+  handleScan(code);
+}
+
+function saveNewProduct(nombre, categoria, notas){
+  if(!nombre.trim()) return;
+  data.productos[pendingCode] = { nombre:nombre.trim(), categoria:categoria.trim(), notas:notas.trim() };
+  data.historial[pendingCode] = [new Date().toISOString(), ...(data.historial[pendingCode]||[])];
+  saveData();
+  showFlash(`Producto guardado: ${nombre.trim()}`);
+  pendingCode = null;
+  closeSheet();
+}
+
+function saveEdit(nombre, categoria, notas){
+  if(!nombre.trim() || !editingCode) return;
+  data.productos[editingCode] = { nombre:nombre.trim(), categoria:categoria.trim(), notas:notas.trim() };
+  saveData();
+  editingCode = null;
+  closeSheet();
+  renderList();
+}
+
+function deleteProduct(code){
+  delete data.productos[code];
+  delete data.historial[code];
+  saveData();
+  closeSheet();
+  renderList();
+}
+
+function renderList(){
+  const el = document.getElementById('viewList');
+  const entries = Object.entries(data.productos).sort((a,b)=>{
+    const da = (data.historial[a[0]]||[])[0] || '';
+    const db = (data.historial[b[0]]||[])[0] || '';
+    return db.localeCompare(da);
+  });
+  document.getElementById('countBadge').textContent = entries.length;
+  if(entries.length===0){
+    el.innerHTML = `<div class="empty-state"><div style="font-size:28px;">📦</div><div>Aún no hay productos. Escanea el primer código para empezar.</div></div>`;
+    return;
+  }
+  el.innerHTML = entries.map(([code,p])=>{
+    const hist = data.historial[code]||[];
+    const last = hist[0] ? formatFecha(hist[0]) : 'sin compras registradas';
+    return `<button class="tag-card" onclick="openDetail('${code}')">
+      <div class="tag-hole"></div>
+      <div style="flex:1;text-align:left;">
+        <div class="tag-name">${escapeHtml(p.nombre)}</div>
+        ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+        <div class="tag-meta">🕓 ${last}</div>
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="count-badge">${hist.length}×</div>
+        <div style="color:var(--slate);">›</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function openDetail(code){
+  selectedCode = code;
+  const p = data.productos[code];
+  const hist = data.historial[code] || [];
+  const html = `
+    <div class="eyebrow">código</div>
+    <div class="code-mono">${code}</div>
+    <div class="title2">${escapeHtml(p.nombre)}</div>
+    ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+    ${p.notas ? `<div class="notes">${escapeHtml(p.notas)}</div>` : ''}
+    <div class="stripe-divider"></div>
+    <div class="eyebrow">historial de compras (${hist.length})</div>
+    <div style="margin-top:10px;">
+      ${hist.length===0 ? '<div style="color:var(--slate);">Sin registros aún.</div>' :
+        hist.map(iso=>`<div class="history-row"><div class="history-dot"></div><div class="history-date">${formatFecha(iso)}</div></div>`).join('')}
+    </div>
+    <div class="btnrow">
+      <button class="secondary-btn flex1" onclick="openEditFromDetail('${code}')">✎ Editar</button>
+      <button class="danger-btn flex1" onclick="deleteProduct('${code}')">🗑 Eliminar</button>
+    </div>
+  `;
+  openSheet(html);
+}
+
+function openEditFromDetail(code){
+  editingCode = code;
+  const p = data.productos[code];
+  openProductForm('Editar producto', code, p, saveEdit);
+}
+
+function openProductForm(title, code, initial, onSave){
+  const html = `
+    <div class="eyebrow">${title}</div>
+    <div class="code-mono">${code}</div>
+    <label class="field">Nombre del producto</label>
+    <input type="text" id="fNombre" value="${escapeHtml(initial.nombre||'')}" placeholder="p. ej. Aceite de oliva 1L">
+    <label class="field">Categoría (opcional)</label>
+    <input type="text" id="fCategoria" value="${escapeHtml(initial.categoria||'')}" placeholder="p. ej. despensa">
+    <label class="field">Notas (opcional)</label>
+    <textarea id="fNotas" rows="3" placeholder="marca preferida, tienda, precio habitual…">${escapeHtml(initial.notas||'')}</textarea>
+    <div class="btnrow">
+      <button class="secondary-btn flex1" onclick="closeSheet()">‹ Cancelar</button>
+      <button class="primary-btn flex1" style="margin-top:0;" onclick="submitForm()">✓ Guardar</button>
+    </div>
+  `;
+  openSheet(html);
+  window._onSaveForm = onSave;
+}
+
+function submitForm(){
+  const nombre = document.getElementById('fNombre').value;
+  const categoria = document.getElementById('fCategoria').value;
+  const notas = document.getElementById('fNotas').value;
+  if(window._onSaveForm) window._onSaveForm(nombre, categoria, notas);
+}
+
+function openSheet(innerHtml){
+  document.getElementById('sheetContainer').innerHTML = `
+    <div class="sheet-overlay" onclick="if(event.target===this)closeSheet()">
+      <div class="sheet">
+        <button class="sheet-close" onclick="closeSheet()">✕</button>
+        ${innerHtml}
+      </div>
+    </div>`;
+}
+function closeSheet(){
+  document.getElementById('sheetContainer').innerHTML = '';
+  pendingCode = null; editingCode = null; selectedCode = null;
+}
+
+loadData();
+if(!('BarcodeDetector' in window)){
+  document.getElementById('unsupportedBox').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
