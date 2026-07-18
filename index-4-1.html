@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#080B12">
+<link rel="manifest" href="manifest.json">
+<title>Stokeo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root{
+    --bg:#080B12; --panel:#101623; --panel2:#161F30; --line:#243146;
+    --ink:#E7F1FF; --slate:#7C8CA6;
+    --cyan:#00E5FF; --magenta:#FF2E92; --green:#39FF9E; --amber:#FFC24B; --red:#FF3B5C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:
+      radial-gradient(circle at 15% 0%, rgba(0,229,255,.10), transparent 45%),
+      radial-gradient(circle at 100% 20%, rgba(255,46,146,.08), transparent 40%),
+      var(--bg);
+    color:var(--ink);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;
+    background-attachment:fixed;
+  }
+  input:focus, button:focus, textarea:focus{outline:2px solid var(--cyan); outline-offset:1px;}
+  .root{max-width:480px;margin:0 auto;padding-bottom:96px;position:relative;}
+  .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;max-width:480px;margin:0 auto;
+    display:flex;background:rgba(11,15,25,.92);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);box-shadow:0 -4px 24px rgba(0,0,0,.4);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:8px;}
+  .navbtn{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    background:transparent;border:none;border-radius:12px;padding:8px 6px;color:var(--slate);cursor:pointer;
+    font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;letter-spacing:.02em;}
+  .navicon{font-size:20px;line-height:1;}
+  .navbtn.active{color:var(--cyan);background:rgba(0,229,255,.1);box-shadow:0 0 16px rgba(0,229,255,.18) inset;}
+  .navbtn.active .navicon{text-shadow:0 0 10px var(--cyan);}
+  .navbadge{position:absolute;top:4px;right:18%;min-width:16px;height:16px;padding:0 4px;border-radius:9px;
+    background:var(--magenta);color:#1A0410;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,46,146,.6);}
+  .header{position:relative;background:linear-gradient(180deg,#0C1320,#080B12 90%);color:var(--ink);overflow:hidden;border-bottom:1px solid var(--line);}
+  .header-stripes{position:absolute;inset:0;opacity:.5;
+    background-image:
+      linear-gradient(rgba(0,229,255,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.08) 1px, transparent 1px);
+    background-size:22px 22px;
+    mask-image:linear-gradient(180deg,#000 0%, transparent 90%);}
+  .header-row{position:relative;padding:20px 16px 16px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
+  .eyebrow-light{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);opacity:.85;}
+  .title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:30px;letter-spacing:.06em;
+    background:linear-gradient(90deg,var(--cyan),var(--ink) 60%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 22px rgba(0,229,255,.35);}
+  .tabs{display:flex;gap:6px;}
+  .tabbtn{display:flex;align-items:center;gap:6px;background:rgba(16,22,35,.7);color:var(--slate);border:1px solid var(--line);border-radius:20px;padding:7px 12px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:500;cursor:pointer;}
+  .tabbtn.active{background:rgba(0,229,255,.12);color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(0,229,255,.25);}
+  .content{padding:16px;}
+  .scanner-frame{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(0,229,255,.06), 0 0 30px rgba(0,229,255,.08) inset;}
+  video{width:100%;height:100%;object-fit:cover;filter:saturate(1.05) contrast(1.05);}
+  .reticle{position:absolute;inset:0;pointer-events:none;}
+  .reticle::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow:0 0 12px 2px var(--cyan);
+    animation:scanline 2.2s linear infinite;}
+  @keyframes scanline{0%{top:4%;}50%{top:94%;}100%{top:4%;}}
+  .corner{position:absolute;width:24px;height:24px;border:3px solid var(--magenta);filter:drop-shadow(0 0 6px rgba(255,46,146,.7));}
+  .primary-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;color:#04141A;border:none;border-radius:8px;padding:12px 16px;font-family:'IBM Plex Sans';font-weight:700;font-size:14.5px;letter-spacing:.02em;cursor:pointer;margin-top:14px;
+    background:linear-gradient(90deg,var(--green),var(--cyan));box-shadow:0 0 18px rgba(57,255,158,.25);}
+  .primary-btn.stop{background:linear-gradient(90deg,var(--red),var(--magenta));color:#20040B;box-shadow:0 0 18px rgba(255,59,92,.3);}
+  .secondary-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:11px 16px;font-family:'IBM Plex Sans';font-weight:600;font-size:14px;cursor:pointer;}
+  .secondary-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .danger-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,59,92,.12);color:var(--red);border:1.5px solid var(--red);border-radius:8px;padding:11px 16px;font-family:'IBM Plex Sans';font-weight:600;font-size:14px;cursor:pointer;}
+  .warn-box{margin-top:12px;background:rgba(255,194,75,.1);color:var(--amber);border:1px solid rgba(255,194,75,.35);padding:10px 12px;border-radius:8px;font-size:13px;}
+  .flash-banner{margin-top:12px;display:flex;align-items:center;gap:8px;background:rgba(57,255,158,.1);color:var(--green);border:1px solid rgba(57,255,158,.4);padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:600;box-shadow:0 0 16px rgba(57,255,158,.15);}
+  .stripe-divider{height:1px;margin:22px 0;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.4;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);}
+  .row-input{display:flex;gap:8px;margin-top:8px;}
+  input[type=text], textarea{width:100%;font-family:'IBM Plex Mono',monospace;font-size:14.5px;padding:11px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);}
+  input[type=date]{width:100%;font-family:'IBM Plex Mono',monospace;font-size:14.5px;padding:11px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);}
+  input[type=date]:disabled{opacity:.35;}
+  .check-row{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;color:var(--slate);cursor:pointer;}
+  .check-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--cyan);cursor:pointer;flex-shrink:0;}
+  input[type=text]::placeholder, textarea::placeholder{color:var(--slate);}
+  textarea{font-family:'IBM Plex Sans';resize:vertical;}
+  .icon-btn{background:linear-gradient(90deg,var(--cyan),var(--magenta));color:#04141A;border:none;border-radius:8px;width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;font-weight:700;}
+  .empty-state{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--slate);padding:50px 20px;font-size:14px;}
+  .tag-card{position:relative;width:100%;display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;text-align:left;transition:border-color .15s;}
+  .tag-card:hover{border-color:var(--cyan);}
+  .tag-hole{position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px 2px var(--cyan);}
+  .tag-name{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:18px;letter-spacing:.01em;}
+  .tag-category{font-size:11.5px;color:var(--magenta);font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:.08em;}
+  .tag-meta{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--slate);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .count-badge{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;background:rgba(0,229,255,.12);color:var(--cyan);border:1px solid rgba(0,229,255,.4);border-radius:12px;padding:2px 9px;}
+  .sheet-overlay{position:fixed;inset:0;background:rgba(3,5,10,.7);backdrop-filter:blur(3px);display:flex;align-items:flex-end;z-index:50;}
+  .sheet{position:relative;width:100%;max-height:85vh;overflow-y:auto;background:linear-gradient(180deg,#111827,#0B0F19);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:24px 20px 28px;box-shadow:0 -10px 40px rgba(0,229,255,.08);}
+  .sheet-close{position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--slate);cursor:pointer;font-size:20px;}
+  .code-mono{font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.05em;margin-top:4px;margin-bottom:10px;color:var(--cyan);}
+  .title2{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;}
+  .notes{font-size:13.5px;color:var(--slate);margin-top:8px;line-height:1.5;}
+  .history-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .history-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px 1px var(--green);}
+  .history-date{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);}
+  label.field{display:block;margin-top:14px;margin-bottom:6px;font-size:12.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;}
+  .hidden{display:none !important;}
+  .btnrow{display:flex;gap:10px;margin-top:16px;}
+  .flex1{flex:1;}
+  .unit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .unit-info{display:flex;flex-direction:column;gap:4px;}
+  .unit-sub{font-size:11.5px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
+  .unit-actions{display:flex;gap:6px;flex-shrink:0;}
+  .unit-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 9px;border-radius:12px;font-family:'IBM Plex Sans';width:fit-content;}
+  .badge-red{background:rgba(255,59,92,.15);color:var(--red);border:1px solid rgba(255,59,92,.4);}
+  .badge-amber{background:rgba(255,194,75,.15);color:var(--amber);border:1px solid rgba(255,194,75,.4);}
+  .badge-green{background:rgba(57,255,158,.12);color:var(--green);border:1px solid rgba(57,255,158,.35);}
+  .badge-slate{background:rgba(124,140,166,.12);color:var(--slate);border:1px solid rgba(124,140,166,.3);}
+</style>
+</head>
+<body>
+<div class="root">
+  <div class="header">
+    <div class="header-stripes"></div>
+    <div class="header-row">
+      <div>
+        <div class="eyebrow-light">inventario doméstico</div>
+        <div class="title">STOKEO</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewScan" class="content">
+    <div id="unsupportedBox" class="warn-box hidden">Este navegador no soporta el lector de códigos automático. Añade el código a mano abajo.</div>
+    <div id="scannerWrap">
+      <div class="scanner-frame">
+        <video id="video" muted playsinline></video>
+        <div class="reticle hidden" id="reticle">
+          <div class="corner" style="top:10px;left:10px;border-right:none;border-bottom:none;"></div>
+          <div class="corner" style="top:10px;right:10px;border-left:none;border-bottom:none;"></div>
+          <div class="corner" style="bottom:10px;left:10px;border-right:none;border-top:none;"></div>
+          <div class="corner" style="bottom:10px;right:10px;border-left:none;border-top:none;"></div>
+        </div>
+      </div>
+      <div id="cameraError" class="warn-box hidden"></div>
+      <button id="camBtn" class="primary-btn" onclick="toggleCamera()">📷 Activar cámara</button>
+    </div>
+    <div id="flashBanner" class="flash-banner hidden"></div>
+    <div class="stripe-divider"></div>
+    <div>
+      <div class="eyebrow">añadir código a mano</div>
+      <div class="row-input">
+        <input type="text" id="manualCode" placeholder="8410000123456" onkeydown="if(event.key==='Enter')submitManual()">
+        <button class="icon-btn" onclick="submitManual()">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewList" class="content hidden"></div>
+  <div id="viewCaducan" class="content hidden"></div>
+</div>
+
+<div class="bottom-nav">
+  <button class="navbtn active" id="tabScan" onclick="setView('scan')">
+    <span class="navicon">◎</span>
+    <span class="navlabel">Escanear</span>
+  </button>
+  <button class="navbtn" id="tabList" onclick="setView('list')">
+    <span class="navicon">▤</span>
+    <span class="navlabel">Productos</span>
+    <span class="navbadge" id="countBadge">0</span>
+  </button>
+  <button class="navbtn" id="tabCaducan" onclick="setView('caducan')">
+    <span class="navicon">⏰</span>
+    <span class="navlabel">Caducan</span>
+    <span class="navbadge" id="caducanBadge">0</span>
+  </button>
+</div>
+
+<div id="sheetContainer"></div>
+
+
+<script>
+const FORMATS = ["ean_13","ean_8","upc_a","upc_e","code_128","code_39","qr_code"];
+const STORAGE_KEY = "almacen-data";
+const UMBRAL_DIAS = 10; // avisa cuando falten 10 días o menos para caducar
+let data = { productos:{}, unidades:{} };
+let scanning = false, stream = null, detector = null, detectInterval = null;
+let lastScan = { code:null, time:0 };
+let pendingCode = null, editingCode = null, selectedCode = null;
+let currentView = 'scan';
+
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      data.productos = parsed.productos || {};
+      if(parsed.unidades){
+        data.unidades = parsed.unidades;
+      } else if(parsed.historial){
+        // migración desde la versión antigua (solo fechas de escaneo, sin caducidad por bote)
+        data.unidades = {};
+        for(const code in parsed.historial){
+          data.unidades[code] = (parsed.historial[code]||[]).map(iso => ({
+            id: uid(), escaneo: iso, caducidad: null, consumido: false
+          }));
+        }
+      } else {
+        data.unidades = {};
+      }
+    }
+  }catch(e){ data = { productos:{}, unidades:{} }; }
+}
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  updateBadges();
+}
+
+function diasHasta(iso){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(iso+'T00:00:00');
+  return Math.round((d-hoy)/86400000);
+}
+
+function updateBadges(){
+  const productBadge = document.getElementById('countBadge');
+  const caducanBadge = document.getElementById('caducanBadge');
+  if(!productBadge) return;
+  let totalActivas = 0, totalCaducan = 0;
+  for(const code in data.productos){
+    const units = data.unidades[code] || [];
+    units.forEach(u=>{
+      if(u.consumido) return;
+      totalActivas++;
+      if(u.caducidad && diasHasta(u.caducidad) <= UMBRAL_DIAS) totalCaducan++;
+    });
+  }
+  productBadge.textContent = totalActivas;
+  if(caducanBadge) caducanBadge.textContent = totalCaducan;
+}
+
+function setView(v){
+  currentView = v;
+  document.getElementById('viewScan').classList.toggle('hidden', v!=='scan');
+  document.getElementById('viewList').classList.toggle('hidden', v!=='list');
+  document.getElementById('viewCaducan').classList.toggle('hidden', v!=='caducan');
+  document.getElementById('tabScan').classList.toggle('active', v==='scan');
+  document.getElementById('tabList').classList.toggle('active', v==='list');
+  document.getElementById('tabCaducan').classList.toggle('active', v==='caducan');
+  if(v!=='scan') stopCamera();
+  if(v==='list') renderList();
+  if(v==='caducan') renderCaducan();
+}
+
+function formatFecha(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function toggleCamera(){
+  if(scanning){ stopCamera(); return; }
+  const errBox = document.getElementById('cameraError');
+  errBox.classList.add('hidden');
+  if(!('BarcodeDetector' in window)){
+    document.getElementById('unsupportedBox').classList.remove('hidden');
+    document.getElementById('scannerWrap').classList.add('hidden');
+    return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false });
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    await video.play();
+    if(!detector) detector = new BarcodeDetector({ formats: FORMATS });
+    scanning = true;
+    document.getElementById('camBtn').textContent = '⏹ Detener cámara';
+    document.getElementById('camBtn').classList.add('stop');
+    document.getElementById('reticle').classList.remove('hidden');
+    detectInterval = setInterval(detectFrame, 400);
+  }catch(e){
+    errBox.textContent = 'No se pudo acceder a la cámara: ' + (e.message || e.name);
+    errBox.classList.remove('hidden');
+  }
+}
+
+function stopCamera(){
+  if(detectInterval) clearInterval(detectInterval);
+  detectInterval = null;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  scanning = false;
+  document.getElementById('camBtn').textContent = '📷 Activar cámara';
+  document.getElementById('camBtn').classList.remove('stop');
+  document.getElementById('reticle').classList.add('hidden');
+}
+
+async function detectFrame(){
+  const video = document.getElementById('video');
+  if(!detector || video.readyState < 2) return;
+  if(document.getElementById('sheetContainer').innerHTML.trim() !== '') return; // pausado: hay un formulario/ficha abierta
+  try{
+    const codes = await detector.detect(video);
+    if(codes && codes.length>0){
+      const value = codes[0].rawValue;
+      const now = Date.now();
+      if(lastScan.code===value && now-lastScan.time<4000) return;
+      lastScan = { code:value, time:now };
+      handleScan(value);
+    }
+  }catch(e){}
+}
+
+function handleScan(code){
+  pendingCode = code;
+  if(data.productos[code]){
+    openUnitForm(code);
+  } else {
+    openProductForm('Nuevo producto', code, {nombre:'',categoria:'',notas:''}, true);
+  }
+}
+
+function openUnitForm(code){
+  const p = data.productos[code];
+  const html = `
+    <div class="eyebrow">código detectado</div>
+    <div class="code-mono">${code}</div>
+    <div class="title2">${escapeHtml(p.nombre)}</div>
+    ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+    <div class="notes" style="margin-top:10px;">Ya tienes este producto guardado. Indica la fecha de caducidad de este bote concreto para llevar el control por unidad.</div>
+    <label class="field">Fecha de caducidad</label>
+    <input type="date" id="fCaducidadUnidad">
+    <label class="check-row">
+      <input type="checkbox" id="fSinCaducidad" onchange="toggleCaducidadInput('fSinCaducidad','fCaducidadUnidad')">
+      Este producto no tiene fecha de caducidad
+    </label>
+    <div class="btnrow">
+      <button class="secondary-btn flex1" onclick="closeSheet()">‹ Cancelar</button>
+      <button class="primary-btn flex1" style="margin-top:0;" onclick="submitNewUnit()">✓ Guardar unidad</button>
+    </div>
+  `;
+  openSheet(html);
+}
+
+function toggleCaducidadInput(checkboxId, dateInputId){
+  const checkbox = document.getElementById(checkboxId);
+  const input = document.getElementById(dateInputId);
+  input.disabled = checkbox.checked;
+  if(checkbox.checked) input.value = '';
+}
+
+function addUnitManual(code){
+  pendingCode = code;
+  openUnitForm(code);
+}
+
+function addUnit(code, caducidad){
+  const unit = { id: uid(), escaneo: new Date().toISOString(), caducidad: caducidad || null, consumido:false };
+  data.unidades[code] = data.unidades[code] ? [unit, ...data.unidades[code]] : [unit];
+  saveData();
+}
+
+function submitNewUnit(){
+  const caducidad = document.getElementById('fCaducidadUnidad').value || null;
+  const code = pendingCode;
+  addUnit(code, caducidad);
+  showFlash(`Unidad añadida: ${data.productos[code].nombre}`);
+  pendingCode = null;
+  openDetail(code);
+}
+
+function toggleConsumido(code, unitId){
+  const u = (data.unidades[code]||[]).find(x=>x.id===unitId);
+  if(u) u.consumido = !u.consumido;
+  saveData();
+  refreshCurrentView();
+}
+
+function deleteUnit(code, unitId){
+  data.unidades[code] = (data.unidades[code]||[]).filter(u=>u.id!==unitId);
+  saveData();
+  refreshCurrentView();
+}
+
+function refreshCurrentView(){
+  const sheetOpen = document.getElementById('sheetContainer').innerHTML.trim() !== '';
+  if(sheetOpen && selectedCode) openDetail(selectedCode);
+  if(currentView==='list') renderList();
+  if(currentView==='caducan') renderCaducan();
+}
+
+function caducidadEstado(iso){
+  const diffDias = diasHasta(iso);
+  if(diffDias < 0) return {label:'Caducado', icon:'⚠️', cls:'badge-red'};
+  if(diffDias <= 3) return {label:'Caduca pronto', icon:'⏳', cls:'badge-amber'};
+  return {label:'Caduca', icon:'✅', cls:'badge-green'};
+}
+
+function formatFechaCorta(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function renderCaducan(){
+  const el = document.getElementById('viewCaducan');
+  const items = [];
+  for(const code in data.productos){
+    const p = data.productos[code];
+    const units = data.unidades[code] || [];
+    units.forEach(u=>{
+      if(u.consumido || !u.caducidad) return;
+      const dias = diasHasta(u.caducidad);
+      if(dias <= UMBRAL_DIAS) items.push({code, p, u, dias});
+    });
+  }
+  items.sort((a,b)=>a.dias-b.dias);
+  if(items.length===0){
+    el.innerHTML = `<div class="empty-state"><div style="font-size:28px;">✅</div><div>No hay ningún bote a ${UMBRAL_DIAS} días o menos de caducar.</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="eyebrow" style="margin-bottom:10px;">a ${UMBRAL_DIAS} días o menos de caducar</div>` + items.map(({code,p,u,dias})=>{
+    const est = caducidadEstado(u.caducidad);
+    const diasTxt = dias < 0 ? `Caducado hace ${Math.abs(dias)} día${Math.abs(dias)===1?'':'s'}`
+      : dias===0 ? 'Caduca hoy'
+      : `Caduca en ${dias} día${dias===1?'':'s'}`;
+    return `<div class="tag-card" style="cursor:default;">
+      <div class="tag-hole"></div>
+      <div style="flex:1;text-align:left;">
+        <div class="tag-name">${escapeHtml(p.nombre)}</div>
+        ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+        <div class="unit-badge ${est.cls}" style="margin-top:6px;">${est.icon} ${diasTxt}</div>
+        <div class="unit-sub" style="margin-top:6px;">Caduca: ${formatFechaCorta(u.caducidad)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="secondary-btn" style="padding:7px 10px;font-size:12px;" onclick="toggleConsumido('${code}','${u.id}')">Consumir</button>
+        <button class="secondary-btn" style="padding:7px 10px;font-size:12px;" onclick="openDetail('${code}')">Ver ficha</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showFlash(msg){
+  const el = document.getElementById('flashBanner');
+  el.textContent = '✓ ' + msg;
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'), 3000);
+}
+
+function submitManual(){
+  const input = document.getElementById('manualCode');
+  const code = input.value.trim();
+  if(!code) return;
+  input.value = '';
+  handleScan(code);
+}
+
+function saveNewProduct(nombre, categoria, notas, caducidad){
+  if(!nombre.trim()) return;
+  const code = pendingCode;
+  data.productos[code] = { nombre:nombre.trim(), categoria:categoria.trim(), notas:notas.trim() };
+  addUnit(code, caducidad);
+  saveData();
+  showFlash(`Producto guardado: ${nombre.trim()}`);
+  pendingCode = null;
+  closeSheet();
+}
+
+function saveEdit(nombre, categoria, notas){
+  if(!nombre.trim() || !editingCode) return;
+  data.productos[editingCode] = { nombre:nombre.trim(), categoria:categoria.trim(), notas:notas.trim() };
+  saveData();
+  editingCode = null;
+  closeSheet();
+  renderList();
+}
+
+function deleteProduct(code){
+  delete data.productos[code];
+  delete data.unidades[code];
+  saveData();
+  closeSheet();
+  renderList();
+}
+
+function renderList(){
+  const el = document.getElementById('viewList');
+  const entries = Object.entries(data.productos).sort((a,b)=>{
+    const ua = (data.unidades[a[0]]||[])[0];
+    const ub = (data.unidades[b[0]]||[])[0];
+    const da = ua ? ua.escaneo : '';
+    const db = ub ? ub.escaneo : '';
+    return db.localeCompare(da);
+  });
+  const totalActivas = entries.reduce((sum,[code])=> sum + (data.unidades[code]||[]).filter(u=>!u.consumido).length, 0);
+  document.getElementById('countBadge').textContent = totalActivas;
+  if(entries.length===0){
+    el.innerHTML = `<div class="empty-state"><div style="font-size:28px;">📦</div><div>Aún no hay productos. Escanea el primer código para empezar.</div></div>`;
+    return;
+  }
+  el.innerHTML = entries.map(([code,p])=>{
+    const units = data.unidades[code] || [];
+    const active = units.filter(u=>!u.consumido);
+    const last = units[0] ? formatFecha(units[0].escaneo) : 'sin escaneos registrados';
+    const conFecha = active.filter(u=>u.caducidad).sort((a,b)=>a.caducidad.localeCompare(b.caducidad));
+    let capMeta = '';
+    if(conFecha[0]){
+      const est = caducidadEstado(conFecha[0].caducidad);
+      capMeta = `<div class="tag-meta">${est.icon} ${est.label}: ${formatFechaCorta(conFecha[0].caducidad)}</div>`;
+    }
+    return `<button class="tag-card" onclick="openDetail('${code}')">
+      <div class="tag-hole"></div>
+      <div style="flex:1;text-align:left;">
+        <div class="tag-name">${escapeHtml(p.nombre)}</div>
+        ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+        <div class="tag-meta">🕓 ${last}</div>
+        ${capMeta}
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="count-badge">${active.length}×</div>
+        <div style="color:var(--slate);">›</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function openDetail(code){
+  selectedCode = code;
+  const p = data.productos[code];
+  const units = data.unidades[code] || [];
+  const sorted = [...units].sort((a,b)=>{
+    if(a.consumido !== b.consumido) return a.consumido ? 1 : -1;
+    return (a.caducidad||'9999-99-99').localeCompare(b.caducidad||'9999-99-99');
+  });
+  const activas = units.filter(u=>!u.consumido).length;
+  const html = `
+    <div class="eyebrow">código</div>
+    <div class="code-mono">${code}</div>
+    <div class="title2">${escapeHtml(p.nombre)}</div>
+    ${p.categoria ? `<div class="tag-category">${escapeHtml(p.categoria)}</div>` : ''}
+    ${p.notas ? `<div class="notes">${escapeHtml(p.notas)}</div>` : ''}
+    <div class="stripe-divider"></div>
+    <div class="eyebrow">unidades (${activas} activas de ${units.length})</div>
+    <div style="margin-top:10px;">
+      ${sorted.length===0 ? '<div style="color:var(--slate);">Sin unidades registradas aún.</div>' :
+        sorted.map(u=>{
+          const est = u.caducidad ? caducidadEstado(u.caducidad) : {label:'Sin fecha de caducidad', icon:'•', cls:'badge-slate'};
+          const cls = u.consumido ? 'badge-slate' : est.cls;
+          const texto = u.consumido ? 'Consumido' : (u.caducidad ? `${est.label}: ${formatFechaCorta(u.caducidad)}` : est.label);
+          const icono = u.consumido ? '✔' : est.icon;
+          return `<div class="unit-row">
+            <div class="unit-info">
+              <div class="unit-badge ${cls}">${icono} ${texto}</div>
+              <div class="unit-sub">Escaneado: ${formatFecha(u.escaneo)}</div>
+            </div>
+            <div class="unit-actions">
+              <button class="secondary-btn" style="padding:7px 10px;font-size:12px;" onclick="toggleConsumido('${code}','${u.id}')">${u.consumido ? 'Deshacer' : 'Consumir'}</button>
+              <button class="danger-btn" style="padding:7px 10px;font-size:12px;" onclick="deleteUnit('${code}','${u.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>
+    <button class="secondary-btn" style="width:100%;margin-top:14px;" onclick="addUnitManual('${code}')">+ Añadir unidad manual</button>
+    <div class="btnrow">
+      <button class="secondary-btn flex1" onclick="openEditFromDetail('${code}')">✎ Editar</button>
+      <button class="danger-btn flex1" onclick="deleteProduct('${code}')">🗑 Eliminar</button>
+    </div>
+  `;
+  openSheet(html);
+}
+
+function openEditFromDetail(code){
+  editingCode = code;
+  const p = data.productos[code];
+  openProductForm('Editar producto', code, p, false);
+}
+
+function openProductForm(title, code, initial, isNew){
+  const html = `
+    <div class="eyebrow">${title}</div>
+    <div class="code-mono">${code}</div>
+    <label class="field">Nombre del producto</label>
+    <input type="text" id="fNombre" value="${escapeHtml(initial.nombre||'')}" placeholder="p. ej. Aceite de oliva 1L">
+    <label class="field">Categoría (opcional)</label>
+    <input type="text" id="fCategoria" value="${escapeHtml(initial.categoria||'')}" placeholder="p. ej. despensa">
+    <label class="field">Notas (opcional)</label>
+    <textarea id="fNotas" rows="3" placeholder="marca preferida, tienda, precio habitual…">${escapeHtml(initial.notas||'')}</textarea>
+    ${isNew ? `
+    <label class="field">Fecha de caducidad de este bote</label>
+    <input type="date" id="fCaducidadUnidad">
+    <label class="check-row">
+      <input type="checkbox" id="fSinCaducidad" onchange="toggleCaducidadInput('fSinCaducidad','fCaducidadUnidad')">
+      Este producto no tiene fecha de caducidad
+    </label>
+    ` : ''}
+    <div class="btnrow">
+      <button class="secondary-btn flex1" onclick="closeSheet()">‹ Cancelar</button>
+      <button class="primary-btn flex1" style="margin-top:0;" onclick="submitForm(${isNew ? 'true' : 'false'})">✓ Guardar</button>
+    </div>
+  `;
+  openSheet(html);
+}
+
+function submitForm(isNew){
+  const nombre = document.getElementById('fNombre').value;
+  const categoria = document.getElementById('fCategoria').value;
+  const notas = document.getElementById('fNotas').value;
+  if(isNew){
+    const caducidad = document.getElementById('fCaducidadUnidad').value || null;
+    saveNewProduct(nombre, categoria, notas, caducidad);
+  } else {
+    saveEdit(nombre, categoria, notas);
+  }
+}
+
+function openSheet(innerHtml){
+  document.getElementById('sheetContainer').innerHTML = `
+    <div class="sheet-overlay" onclick="if(event.target===this)closeSheet()">
+      <div class="sheet">
+        <button class="sheet-close" onclick="closeSheet()">✕</button>
+        ${innerHtml}
+      </div>
+    </div>`;
+}
+function closeSheet(){
+  document.getElementById('sheetContainer').innerHTML = '';
+  pendingCode = null; editingCode = null; selectedCode = null;
+}
+
+loadData();
+updateBadges();
+if(!('BarcodeDetector' in window)){
+  document.getElementById('unsupportedBox').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
